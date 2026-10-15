@@ -23,7 +23,14 @@ var is_eliminated: bool = false
 
 ## Parameter AI & Navigasi Fisika (Task 04)
 @export_group("AI Controller")
-@export var ai_enabled: bool = true
+@export var ai_enabled: bool = true:
+	set(value):
+		ai_enabled = value
+		if not ai_enabled:
+			current_target = null
+		else:
+			_target_timer = 0.0
+
 @export var max_speed: float = 300.0
 @export var max_force: float = 1000.0
 @export var steering_responsiveness: float = 4.0
@@ -38,7 +45,7 @@ func _ready() -> void:
 	add_to_group("fighters")
 	
 	current_hp = max_hp
-	print("[%s (ID: %d)] Memasuki arena dengan HP: %0.1f/%0.1f" % [fighter_name, fighter_id, current_hp, max_hp])
+	print("[%s (ID: %d)] Memasuki arena dengan HP: %0.1f/%0.1f | AI: %s" % [fighter_name, fighter_id, current_hp, max_hp, "ON" if ai_enabled else "OFF"])
 	
 	# Terapkan warna visual jika ada
 	var visual: ColorRect = get_node_or_null("Visual")
@@ -229,3 +236,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Task 02 Debug Testing: Tekan 'D' untuk simulasi menerima damage 25
 	elif event.keycode == KEY_D:
 		take_damage(25.0)
+	
+	# Task 04.1 Debug Testing: Tekan 'T' untuk toggle AI secara interaktif saat runtime
+	elif event.keycode == KEY_T:
+		ai_enabled = not ai_enabled
+		print("[%s] Toggle AI -> %s" % [fighter_name, "ON" if ai_enabled else "OFF"])
