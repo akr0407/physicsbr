@@ -21,7 +21,22 @@ var is_eliminated: bool = false
 ## Warna visual fighter untuk membedakan antar fighter di arena
 @export var fighter_color: Color = Color(0.18, 0.8, 0.44, 1)
 
+## Parameter AI & Navigasi Fisika (Task 04)
+@export_group("AI Controller")
+@export var ai_enabled: bool = true
+@export var max_speed: float = 300.0
+@export var max_force: float = 1000.0
+@export var steering_responsiveness: float = 4.0
+@export var retarget_interval: float = 0.2
+@export var knockback_recovery_time: float = 0.35
+
+var current_target: RigidBody2D = null
+var _target_timer: float = 0.0
+
 func _ready() -> void:
+	# Daftarkan ke grup fighters agar dapat dideteksi oleh sistem AI
+	add_to_group("fighters")
+	
 	current_hp = max_hp
 	print("[%s (ID: %d)] Memasuki arena dengan HP: %0.1f/%0.1f" % [fighter_name, fighter_id, current_hp, max_hp])
 	
@@ -37,7 +52,82 @@ func _ready() -> void:
 		body_entered.connect(_on_body_entered)
 	
 	# Menerapkan impuls seketika pada pusat massa (center of mass)
-	apply_central_impulse(initial_impulse)
+	if not initial_impulse.is_zero_approx():
+		apply_central_impulse(initial_impulse)
+
+func _physics_process(delta: float) -> void:
+	# Jika fighter tereliminasi atau AI dinonaktifkan, jangan proses gerakan AI
+	if is_eliminated or not ai_enabled:
+		return
+	
+	# Evaluasi atau perbarui target secara berkala
+	_target_timer -= delta
+	if _target_timer <= 0.0 or not is_instance_valid(current_target) or current_target.is_eliminated:
+		_target_timer = retarget_interval
+		var previous_target: RigidBody2D = current_target
+		current_target = _acquire_target()
+		if current_target != previous_target:
+			if current_target != null:
+				var target_name: String = current_target.fighter_name if "fighter_name" in current_target else current_target.name
+				print("[%s] Menemukan & mengunci target -> [%s]" % [fighter_name, target_name])
+			else:
+				print("[%s] Tidak ada target aktif di arena, menghentikan pengejaran." % [fighter_name])
+	
+	# Jika tidak ada target aktif di arena, biarkan fighter meluncur bebas
+	if current_target == null or not is_instance_valid(current_target):
+		return
+	
+	# Selama masa knockback recovery, hentikan gaya steering agar momentum fisik benturan bekerja alami
+	var current_time: float = Time.get_ticks_msec() / 1000.0
+	if current_time - _last_combat_time < knockback_recovery_time:
+		return
+	
+	# Hitung vektor dan jarak menuju target
+	var to_target: Vector2 = current_target.global_position - global_position
+	var distance: float = to_target.length()
+	
+	# Hindari gaya berlebih jika sudah bertumpuk sangat dekat
+	if distance < 8.0:
+		return
+	
+	var target_direction: Vector2 = to_target.normalized()
+	
+	# Model Kemudi Reynolds (Steering Force):
+	# 1. Tentukan kecepatan yang diinginkan (desired velocity) dengan batas max_speed
+	var desired_velocity: Vector2 = target_direction * max_speed
+	# 2. Hitung gaya koreksi kecepatan (steering force)
+	var steering: Vector2 = (desired_velocity - linear_velocity) * steering_responsiveness
+	# 3. Batasi gaya maksimal agar tidak terjadi runaway force
+	var applied_force: Vector2 = steering.limit_length(max_force)
+	
+	# Terapkan gaya terpusat melalui API fisika RigidBody2D
+	apply_central_force(applied_force)
+
+## Mencari target lawan yang masih aktif di arena
+func _acquire_target() -> RigidBody2D:
+	var fighters: Array[Node] = get_tree().get_nodes_in_group("fighters")
+	var best_target: RigidBody2D = null
+	var closest_distance_sq: float = INF
+	
+	for candidate in fighters:
+		# Abaikan diri sendiri
+		if candidate == self:
+			continue
+		
+		# Pastikan kandidat valid dan bertipe RigidBody2D
+		if not is_instance_valid(candidate) or not (candidate is RigidBody2D):
+			continue
+			
+		# Abaikan fighter yang sudah tereliminasi
+		if "is_eliminated" in candidate and candidate.is_eliminated:
+			continue
+			
+		var dist_sq: float = global_position.distance_squared_to(candidate.global_position)
+		if dist_sq < closest_distance_sq:
+			closest_distance_sq = dist_sq
+			best_target = candidate
+			
+	return best_target
 
 ## Parameter Combat & Tabrakan
 @export var min_impact_velocity: float = 150.0
@@ -118,6 +208,7 @@ func take_damage(amount: float) -> void:
 ## Menangani proses eliminasi (hanya dipicu satu kali)
 func _eliminate() -> void:
 	is_eliminated = true
+	current_target = null
 	print(">>> [%s (ID: %d)] TERELIMINASI! <<<" % [fighter_name, fighter_id])
 	eliminated.emit(self)
 	
