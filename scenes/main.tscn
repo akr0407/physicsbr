@@ -68,4 +68,13 @@ offset_bottom = 324.0
 color = Color(0.22, 0.28, 0.38, 1)
 
 [node name="Fighter" parent="." instance=ExtResource("1_fighter")]
-position = Vector2(576, 324)
+position = Vector2(400, 324)
+initial_impulse = Vector2(700, 0)
+
+[node name="Fighter2" parent="." instance=ExtResource("1_fighter")]
+position = Vector2(752, 324)
+fighter_id = 2
+fighter_name = "Fighter 2"
+initial_impulse = Vector2(-700, 0)
+fighter_color = Color(0.92, 0.35, 0.2, 1)
+
