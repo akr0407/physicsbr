@@ -212,10 +212,20 @@ func take_damage(amount: float) -> void:
 	if current_hp == 0.0:
 		_eliminate()
 
+## Memicu eliminasi fighter secara langsung (misal: out-of-bounds)
+func eliminate() -> void:
+	if is_eliminated:
+		return
+	current_hp = 0.0
+	hp_changed.emit(current_hp, max_hp)
+	_eliminate()
+
 ## Menangani proses eliminasi (hanya dipicu satu kali)
 func _eliminate() -> void:
 	is_eliminated = true
 	current_target = null
+	linear_velocity = Vector2.ZERO
+	angular_velocity = 0.0
 	print(">>> [%s (ID: %d)] TERELIMINASI! <<<" % [fighter_name, fighter_id])
 	eliminated.emit(self)
 	

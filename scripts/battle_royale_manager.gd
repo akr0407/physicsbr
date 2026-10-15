@@ -17,6 +17,15 @@ signal game_over(winner: RigidBody2D)
 @export var spawn_radius: Vector2 = Vector2(380, 200)
 @export var spawn_inward_impulse: float = 250.0
 
+## Konfigurasi Out-of-Bounds (Task 05.4)
+@export_group("Arena Bounds")
+@export var bounds_enabled: bool = true
+@export var arena_rect: Rect2 = Rect2(Vector2(40, 40), Vector2(1072, 568))
+@export var physical_walls_enabled: bool = true:
+	set(value):
+		physical_walls_enabled = value
+		_update_physical_walls()
+
 ## Palet warna default untuk membedakan visual masing-masing fighter
 const DEFAULT_COLORS: Array[Color] = [
 	Color(0.2, 0.8, 0.4),    # Hijau (Fighter 1)
@@ -38,12 +47,61 @@ var _registered_fighters: Array[RigidBody2D] = []
 var _eliminated_fighters: Array[RigidBody2D] = []
 
 func _ready() -> void:
+	_update_physical_walls()
+	
 	# Lakukan spawning secara deferred agar tree parent selesai setup
 	if auto_spawn and fighter_template != null:
 		call_deferred("spawn_fighters")
 	else:
 		_register_existing_fighters()
 		print("[BattleRoyaleManager] Siap. Total fighter terdaftar: %d | Fighter hidup: %d" % [get_total_count(), get_alive_count()])
+
+func _physics_process(_delta: float) -> void:
+	# Evaluasi out-of-bounds setiap physics tick untuk seluruh fighter yang masih hidup
+	if not bounds_enabled or is_game_over:
+		return
+	
+	_check_out_of_bounds()
+
+## Memeriksa seluruh fighter hidup apakah ada yang keluar dari batas arena
+func _check_out_of_bounds() -> void:
+	for fighter in _registered_fighters:
+		if is_instance_valid(fighter) and is_fighter_alive(fighter):
+			if not is_inside_arena_bounds(fighter.global_position):
+				_eliminate_out_of_bounds(fighter)
+
+## Menangani eliminasi fighter yang keluar batas arena
+func _eliminate_out_of_bounds(fighter: RigidBody2D) -> void:
+	if not is_instance_valid(fighter) or not is_fighter_alive(fighter):
+		return
+	
+	var fname: String = fighter.fighter_name if "fighter_name" in fighter else fighter.name
+	var fid: String = str(fighter.fighter_id) if "fighter_id" in fighter else "?"
+	print("[BattleRoyaleManager] OUT OF BOUNDS! %s (ID: %s) keluar arena di posisi %s!" % [fname, fid, fighter.global_position])
+	
+	# Gunakan API eliminasi resmi pada fighter
+	if fighter.has_method("eliminate"):
+		fighter.eliminate()
+	elif fighter.has_method("_eliminate"):
+		fighter._eliminate()
+	else:
+		fighter.take_damage(99999.0)
+
+## Mengecek apakah posisi berada di dalam batas arena
+func is_inside_arena_bounds(pos: Vector2) -> bool:
+	return arena_rect.has_point(pos)
+
+## Mengembalikan Rect2 batas arena
+func get_arena_rect() -> Rect2:
+	return arena_rect
+
+## Mengatur status aktivasi tabrakan fisik dinding pembatas
+func _update_physical_walls() -> void:
+	var walls_node = get_parent().get_node_or_null("ArenaBounds") if get_parent() else null
+	if walls_node:
+		for child in walls_node.get_children():
+			if child is CollisionShape2D:
+				child.set_deferred("disabled", not physical_walls_enabled)
 
 ## Menghitung posisi spawn melingkar/elips yang tersebar merata di arena
 func get_spawn_positions(count: int) -> Array[Vector2]:
@@ -245,8 +303,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.is_echo():
 		return
 	
+	# Debug key 'O': Lemparkan fighter hidup pertama ke luar arena (Out of Bounds test)
+	if event.keycode == KEY_O:
+		var alive_list = get_alive_fighters()
+		if alive_list.size() > 0:
+			var target = alive_list[0]
+			var tname = target.fighter_name if "fighter_name" in target else target.name
+			print("[BattleRoyaleManager DEBUG] Menekan 'O': Melempar %s ke luar arena (x = -100)..." % [tname])
+			target.global_position = Vector2(-100, 324)
+		else:
+			print("[BattleRoyaleManager DEBUG] Tidak ada fighter hidup yang tersisa.")
+	
+	# Debug key 'B': Toggle dinding pembatas fisik (memungkinkan ring-out knockback secara alami)
+	elif event.keycode == KEY_B:
+		physical_walls_enabled = not physical_walls_enabled
+		print("[BattleRoyaleManager DEBUG] Toggle Dinding Fisik Arena -> %s" % ["ON (Solid)" if physical_walls_enabled else "OFF (Ring-Out)"])
+	
 	# Debug key 'K': Eliminasi fighter hidup pertama untuk memudahkan visual testing
-	if event.keycode == KEY_K:
+	elif event.keycode == KEY_K:
 		var alive_list = get_alive_fighters()
 		if alive_list.size() > 0:
 			var target = alive_list[0]
@@ -266,7 +340,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			print("[BattleRoyaleManager DEBUG] Belum ada fighter yang tereliminasi untuk diuji eliminasi ganda.")
 	
-	# Debug key 'J': Simulasi eliminasi draw (kedua/seluruh fighter tereliminasi bersamaan)
+	# Debug key 'J': Simulasi eliminasi draw (seluruh fighter tereliminasi bersamaan)
 	elif event.keycode == KEY_J:
 		if not is_game_over:
 			print("[BattleRoyaleManager DEBUG] Menekan 'J': Simulasi DRAW dengan mengeliminasi seluruh fighter...")
