@@ -1,0 +1,71 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/fighter.tscn" id="1_fighter"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
+size = Vector2(1152, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bottom"]
+size = Vector2(1152, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_left"]
+size = Vector2(40, 648)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_right"]
+size = Vector2(40, 648)
+
+[node name="Main" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1152.0
+offset_bottom = 648.0
+color = Color(0.08, 0.1, 0.14, 1)
+
+[node name="ArenaBounds" type="StaticBody2D" parent="."]
+
+[node name="TopWall" type="CollisionShape2D" parent="ArenaBounds"]
+position = Vector2(576, 20)
+shape = SubResource("RectangleShape2D_top")
+
+[node name="Visual" type="ColorRect" parent="ArenaBounds/TopWall"]
+offset_left = -576.0
+offset_top = -20.0
+offset_right = 576.0
+offset_bottom = 20.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="BottomWall" type="CollisionShape2D" parent="ArenaBounds"]
+position = Vector2(576, 628)
+shape = SubResource("RectangleShape2D_bottom")
+
+[node name="Visual" type="ColorRect" parent="ArenaBounds/BottomWall"]
+offset_left = -576.0
+offset_top = -20.0
+offset_right = 576.0
+offset_bottom = 20.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="LeftWall" type="CollisionShape2D" parent="ArenaBounds"]
+position = Vector2(20, 324)
+shape = SubResource("RectangleShape2D_left")
+
+[node name="Visual" type="ColorRect" parent="ArenaBounds/LeftWall"]
+offset_left = -20.0
+offset_top = -324.0
+offset_right = 20.0
+offset_bottom = 324.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="RightWall" type="CollisionShape2D" parent="ArenaBounds"]
+position = Vector2(1132, 324)
+shape = SubResource("RectangleShape2D_right")
+
+[node name="Visual" type="ColorRect" parent="ArenaBounds/RightWall"]
+offset_left = -20.0
+offset_top = -324.0
+offset_right = 20.0
+offset_bottom = 324.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="Fighter" parent="." instance=ExtResource("1_fighter")]
+position = Vector2(576, 324)
