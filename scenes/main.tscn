@@ -1,7 +1,6 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/fighter.tscn" id="1_fighter"]
-[ext_resource type="Script" path="res://scripts/battle_royale_manager.gd" id="2_manager"]
+[ext_resource type="Script" path="res://scripts/battle_royale_manager.gd" id="1_manager"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
 size = Vector2(1152, 40)
@@ -68,19 +67,5 @@ offset_right = 20.0
 offset_bottom = 324.0
 color = Color(0.22, 0.28, 0.38, 1)
 
-[node name="Fighter" parent="." instance=ExtResource("1_fighter")]
-position = Vector2(400, 324)
-initial_impulse = Vector2(700, 0)
-
-[node name="Fighter2" parent="." instance=ExtResource("1_fighter")]
-position = Vector2(752, 324)
-fighter_id = 2
-fighter_name = "Fighter 2"
-initial_impulse = Vector2(-700, 0)
-fighter_color = Color(0.92, 0.35, 0.2, 1)
-
 [node name="BattleRoyaleManager" type="Node" parent="."]
-script = ExtResource("2_manager")
-
-[connection signal="eliminated" from="Fighter" to="BattleRoyaleManager" method="_on_fighter_eliminated"]
-[connection signal="eliminated" from="Fighter2" to="BattleRoyaleManager" method="_on_fighter_eliminated"]
+script = ExtResource("1_manager")

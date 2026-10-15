@@ -8,6 +8,27 @@ signal fighter_eliminated(fighter: RigidBody2D, remaining_alive_count: int)
 ## winner bernilai RigidBody2D pemenang, atau null jika hasilnya draw
 signal game_over(winner: RigidBody2D)
 
+## Konfigurasi Spawning (Task 05.3)
+@export_group("Spawning Configuration")
+@export var fighter_template: PackedScene = preload("res://scenes/fighter.tscn")
+@export var fighter_count: int = 8
+@export var auto_spawn: bool = true
+@export var arena_center: Vector2 = Vector2(576, 324)
+@export var spawn_radius: Vector2 = Vector2(380, 200)
+@export var spawn_inward_impulse: float = 250.0
+
+## Palet warna default untuk membedakan visual masing-masing fighter
+const DEFAULT_COLORS: Array[Color] = [
+	Color(0.2, 0.8, 0.4),    # Hijau (Fighter 1)
+	Color(0.9, 0.3, 0.2),    # Merah-Oranye (Fighter 2)
+	Color(0.2, 0.6, 0.95),   # Biru (Fighter 3)
+	Color(0.95, 0.75, 0.15), # Emas/Kuning (Fighter 4)
+	Color(0.65, 0.3, 0.85),  # Ungu (Fighter 5)
+	Color(0.15, 0.85, 0.85), # Cyan (Fighter 6)
+	Color(0.95, 0.35, 0.65), # Pink (Fighter 7)
+	Color(0.95, 0.5, 0.15)   # Oranye Terang (Fighter 8)
+]
+
 ## Status akhir pertandingan
 var is_game_over: bool = false
 var winner: RigidBody2D = null
@@ -17,8 +38,60 @@ var _registered_fighters: Array[RigidBody2D] = []
 var _eliminated_fighters: Array[RigidBody2D] = []
 
 func _ready() -> void:
-	# Daftarkan seluruh fighter yang sudah ada di scene
-	_register_existing_fighters()
+	# Lakukan spawning secara deferred agar tree parent selesai setup
+	if auto_spawn and fighter_template != null:
+		call_deferred("spawn_fighters")
+	else:
+		_register_existing_fighters()
+		print("[BattleRoyaleManager] Siap. Total fighter terdaftar: %d | Fighter hidup: %d" % [get_total_count(), get_alive_count()])
+
+## Menghitung posisi spawn melingkar/elips yang tersebar merata di arena
+func get_spawn_positions(count: int) -> Array[Vector2]:
+	var positions: Array[Vector2] = []
+	if count <= 0:
+		return positions
+	
+	var angle_step: float = (2.0 * PI) / float(count)
+	for i in range(count):
+		# Mulai dari sudut atas (-PI/2) agar simetris
+		var angle: float = -PI / 2.0 + (float(i) * angle_step)
+		var pos: Vector2 = arena_center + Vector2(cos(angle) * spawn_radius.x, sin(angle) * spawn_radius.y)
+		positions.append(pos)
+	
+	return positions
+
+## Melakukan instansiasi fighter secara otomatis di arena
+func spawn_fighters(count: int = -1) -> void:
+	if fighter_template == null:
+		push_error("[BattleRoyaleManager] fighter_template belum diatur!")
+		return
+	
+	var n: int = count if count > 0 else fighter_count
+	var positions: Array[Vector2] = get_spawn_positions(n)
+	var target_parent: Node = get_parent() if get_parent() != null else self
+	
+	print("[BattleRoyaleManager] Melakukan spawning %d fighter ke dalam arena..." % [n])
+	
+	for i in range(n):
+		var fighter = fighter_template.instantiate()
+		fighter.fighter_id = i + 1
+		fighter.fighter_name = "Fighter %d" % (i + 1)
+		fighter.name = "Fighter_%d" % (i + 1)
+		fighter.global_position = positions[i]
+		
+		# Berikan dorongan awal mengarah ke tengah arena
+		var impulse_dir: Vector2 = (arena_center - positions[i]).normalized()
+		fighter.initial_impulse = impulse_dir * spawn_inward_impulse
+		
+		# Terapkan warna unik
+		if i < DEFAULT_COLORS.size():
+			fighter.fighter_color = DEFAULT_COLORS[i]
+		else:
+			fighter.fighter_color = Color.from_hsv(float(i) / float(n), 0.75, 0.9)
+		
+		target_parent.add_child(fighter)
+		register_fighter(fighter)
+	
 	print("[BattleRoyaleManager] Siap. Total fighter terdaftar: %d | Fighter hidup: %d" % [get_total_count(), get_alive_count()])
 
 ## Mencari dan mendaftarkan fighter yang ada di scene secara non-rapuh
@@ -193,7 +266,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			print("[BattleRoyaleManager DEBUG] Belum ada fighter yang tereliminasi untuk diuji eliminasi ganda.")
 	
-	# Debug key 'J': Simulasi eliminasi draw (kedua fighter tereliminasi bersamaan)
+	# Debug key 'J': Simulasi eliminasi draw (kedua/seluruh fighter tereliminasi bersamaan)
 	elif event.keycode == KEY_J:
 		if not is_game_over:
 			print("[BattleRoyaleManager DEBUG] Menekan 'J': Simulasi DRAW dengan mengeliminasi seluruh fighter...")
