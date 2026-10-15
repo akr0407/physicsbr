@@ -8,6 +8,9 @@ signal fighter_eliminated(fighter: RigidBody2D, remaining_alive_count: int)
 ## winner bernilai RigidBody2D pemenang, atau null jika hasilnya draw
 signal game_over(winner: RigidBody2D)
 
+## Signal saat pertandingan dimulai dan seluruh fighter telah selesai diinisialisasi (Task 05.5)
+signal match_started(alive_count: int, total_count: int)
+
 ## Konfigurasi Spawning (Task 05.3)
 @export_group("Spawning Configuration")
 @export var fighter_template: PackedScene = preload("res://scenes/fighter.tscn")
@@ -151,6 +154,7 @@ func spawn_fighters(count: int = -1) -> void:
 		register_fighter(fighter)
 	
 	print("[BattleRoyaleManager] Siap. Total fighter terdaftar: %d | Fighter hidup: %d" % [get_total_count(), get_alive_count()])
+	match_started.emit(get_alive_count(), get_total_count())
 
 ## Mencari dan mendaftarkan fighter yang ada di scene secara non-rapuh
 func _register_existing_fighters() -> void:
@@ -165,6 +169,8 @@ func _register_existing_fighters() -> void:
 		for child in get_parent().get_children():
 			if child is RigidBody2D and child.has_signal("eliminated"):
 				register_fighter(child)
+	
+	match_started.emit(get_alive_count(), get_total_count())
 
 ## Mendaftarkan fighter tunggal ke manager
 func register_fighter(fighter: RigidBody2D) -> void:
