@@ -1,7 +1,7 @@
 class_name MatchHUD
 extends CanvasLayer
 
-@export var manager: BattleRoyaleManager = null
+@export var manager: BaseMatchManager = null
 
 @onready var alive_label: Label = $Root/TopBar/AliveLabel
 @onready var game_over_panel: Control = $Root/GameOverPanel
@@ -9,12 +9,14 @@ extends CanvasLayer
 @onready var winner_label: Label = $Root/GameOverPanel/VBox/WinnerLabel
 
 func _ready() -> void:
-	# Hubungkan ke BattleRoyaleManager
+	# Hubungkan ke BaseMatchManager
 	if manager == null:
-		manager = get_node_or_null("../BattleRoyaleManager") as BattleRoyaleManager
+		manager = get_node_or_null("../BattleRoyaleManager") as BaseMatchManager
+		if manager == null:
+			manager = get_node_or_null("../MatchManager") as BaseMatchManager
 		if manager == null and get_parent() != null:
 			for child in get_parent().get_children():
-				if child is BattleRoyaleManager:
+				if child is BaseMatchManager:
 					manager = child
 					break
 	
@@ -44,7 +46,7 @@ func _on_game_over(winner: RigidBody2D) -> void:
 	update_survivor_display()
 	show_game_over(winner)
 
-## Memperbarui teks sisa fighter hidup menggunakan getter resmi BattleRoyaleManager
+## Memperbarui teks sisa fighter hidup menggunakan getter resmi BaseMatchManager
 func update_survivor_display() -> void:
 	if not is_instance_valid(alive_label):
 		return
