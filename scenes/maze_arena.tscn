@@ -1,0 +1,154 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/checkpoint.tscn" id="1_checkpoint"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
+size = Vector2(1152, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bottom"]
+size = Vector2(1152, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_left"]
+size = Vector2(40, 648)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_right"]
+size = Vector2(40, 648)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_div1"]
+size = Vector2(860, 30)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_div2"]
+size = Vector2(860, 30)
+
+[node name="MazeArena" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1152.0
+offset_bottom = 648.0
+color = Color(0.08, 0.1, 0.14, 1)
+
+[node name="MazeWalls" type="StaticBody2D" parent="."]
+
+[node name="TopWall" type="CollisionShape2D" parent="MazeWalls"]
+position = Vector2(576, 20)
+shape = SubResource("RectangleShape2D_top")
+
+[node name="Visual" type="ColorRect" parent="MazeWalls/TopWall"]
+offset_left = -576.0
+offset_top = -20.0
+offset_right = 576.0
+offset_bottom = 20.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="BottomWall" type="CollisionShape2D" parent="MazeWalls"]
+position = Vector2(576, 628)
+shape = SubResource("RectangleShape2D_bottom")
+
+[node name="Visual" type="ColorRect" parent="MazeWalls/BottomWall"]
+offset_left = -576.0
+offset_top = -20.0
+offset_right = 576.0
+offset_bottom = 20.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="LeftWall" type="CollisionShape2D" parent="MazeWalls"]
+position = Vector2(20, 324)
+shape = SubResource("RectangleShape2D_left")
+
+[node name="Visual" type="ColorRect" parent="MazeWalls/LeftWall"]
+offset_left = -20.0
+offset_top = -324.0
+offset_right = 20.0
+offset_bottom = 324.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="RightWall" type="CollisionShape2D" parent="MazeWalls"]
+position = Vector2(1132, 324)
+shape = SubResource("RectangleShape2D_right")
+
+[node name="Visual" type="ColorRect" parent="MazeWalls/RightWall"]
+offset_left = -20.0
+offset_top = -324.0
+offset_right = 20.0
+offset_bottom = 324.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="DividerWall1" type="CollisionShape2D" parent="MazeWalls"]
+position = Vector2(470, 220)
+shape = SubResource("RectangleShape2D_div1")
+
+[node name="Visual" type="ColorRect" parent="MazeWalls/DividerWall1"]
+offset_left = -430.0
+offset_top = -15.0
+offset_right = 430.0
+offset_bottom = 15.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="DividerWall2" type="CollisionShape2D" parent="MazeWalls"]
+position = Vector2(682, 428)
+shape = SubResource("RectangleShape2D_div2")
+
+[node name="Visual" type="ColorRect" parent="MazeWalls/DividerWall2"]
+offset_left = -430.0
+offset_top = -15.0
+offset_right = 430.0
+offset_bottom = 15.0
+color = Color(0.22, 0.28, 0.38, 1)
+
+[node name="Checkpoints" type="Node2D" parent="."]
+
+[node name="Checkpoint1" parent="Checkpoints" instance=ExtResource("1_checkpoint")]
+position = Vector2(160, 120)
+checkpoint_id = 1
+checkpoint_name = "Start/CP1"
+
+[node name="Checkpoint2" parent="Checkpoints" instance=ExtResource("1_checkpoint")]
+position = Vector2(990, 120)
+checkpoint_id = 2
+checkpoint_name = "Turn1_Top"
+
+[node name="Checkpoint3" parent="Checkpoints" instance=ExtResource("1_checkpoint")]
+position = Vector2(990, 324)
+checkpoint_id = 3
+checkpoint_name = "Turn1_Mid"
+
+[node name="Checkpoint4" parent="Checkpoints" instance=ExtResource("1_checkpoint")]
+position = Vector2(160, 324)
+checkpoint_id = 4
+checkpoint_name = "Turn2_Mid"
+
+[node name="Checkpoint5" parent="Checkpoints" instance=ExtResource("1_checkpoint")]
+position = Vector2(160, 528)
+checkpoint_id = 5
+checkpoint_name = "Turn2_Bottom"
+
+[node name="Checkpoint6" parent="Checkpoints" instance=ExtResource("1_checkpoint")]
+position = Vector2(990, 528)
+checkpoint_id = 6
+checkpoint_name = "Finish/CP6"
+
+[node name="SpawnPoints" type="Node2D" parent="."]
+
+[node name="Spawn1" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(80, 80)
+
+[node name="Spawn2" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(80, 160)
+
+[node name="Spawn3" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(140, 80)
+
+[node name="Spawn4" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(140, 160)
+
+[node name="Spawn5" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(200, 80)
+
+[node name="Spawn6" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(200, 160)
+
+[node name="Spawn7" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(260, 80)
+
+[node name="Spawn8" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(260, 160)

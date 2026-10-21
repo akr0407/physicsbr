@@ -40,6 +40,33 @@ var is_eliminated: bool = false
 var current_target: RigidBody2D = null
 var _target_timer: float = 0.0
 
+## Navigasi Target Eksplisit (Task 06.4)
+var nav_target_position: Vector2 = Vector2.ZERO
+var has_nav_target: bool = false
+
+## Mengatur posisi target navigasi eksplisit (world space)
+func set_nav_target_position(pos: Vector2) -> void:
+	if pos.is_finite():
+		nav_target_position = pos
+		has_nav_target = true
+		current_target = null
+	else:
+		clear_nav_target_position()
+
+## Menghapus target navigasi eksplisit dan mengembalikan ke mode rival-hunting
+func clear_nav_target_position() -> void:
+	has_nav_target = false
+	nav_target_position = Vector2.ZERO
+	_target_timer = 0.0
+
+## Mengecek apakah fighter memiliki target navigasi eksplisit aktif
+func has_nav_target_position() -> bool:
+	return has_nav_target
+
+## Mendapatkan posisi target navigasi eksplisit saat ini
+func get_nav_target_position() -> Vector2:
+	return nav_target_position
+
 func _ready() -> void:
 	# Daftarkan ke grup fighters agar dapat dideteksi oleh sistem AI
 	add_to_group("fighters")
@@ -67,21 +94,32 @@ func _physics_process(delta: float) -> void:
 	if is_eliminated or not ai_enabled:
 		return
 	
-	# Evaluasi atau perbarui target secara berkala
-	_target_timer -= delta
-	if _target_timer <= 0.0 or not is_instance_valid(current_target) or current_target.is_eliminated:
-		_target_timer = retarget_interval
-		var previous_target: RigidBody2D = current_target
-		current_target = _acquire_target()
-		if current_target != previous_target:
-			if current_target != null:
-				var target_name: String = current_target.fighter_name if "fighter_name" in current_target else current_target.name
-				print("[%s] Menemukan & mengunci target -> [%s]" % [fighter_name, target_name])
-			else:
-				print("[%s] Tidak ada target aktif di arena, menghentikan pengejaran." % [fighter_name])
+	var target_pos: Vector2
+	var has_valid_destination: bool = false
 	
-	# Jika tidak ada target aktif di arena, biarkan fighter meluncur bebas
-	if current_target == null or not is_instance_valid(current_target):
+	if has_nav_target:
+		target_pos = nav_target_position
+		has_valid_destination = true
+	else:
+		# Evaluasi atau perbarui target secara berkala (Rival-hunting default)
+		_target_timer -= delta
+		if _target_timer <= 0.0 or not is_instance_valid(current_target) or current_target.is_eliminated:
+			_target_timer = retarget_interval
+			var previous_target: RigidBody2D = current_target
+			current_target = _acquire_target()
+			if current_target != previous_target:
+				if current_target != null:
+					var target_name: String = current_target.fighter_name if "fighter_name" in current_target else current_target.name
+					print("[%s] Menemukan & mengunci target -> [%s]" % [fighter_name, target_name])
+				else:
+					print("[%s] Tidak ada target aktif di arena, menghentikan pengejaran." % [fighter_name])
+		
+		if current_target != null and is_instance_valid(current_target) and not current_target.is_eliminated:
+			target_pos = current_target.global_position
+			has_valid_destination = true
+	
+	# Jika tidak ada destinasi aktif di arena, biarkan fighter meluncur bebas
+	if not has_valid_destination:
 		return
 	
 	# Selama masa knockback recovery, hentikan gaya steering agar momentum fisik benturan bekerja alami
@@ -90,7 +128,7 @@ func _physics_process(delta: float) -> void:
 		return
 	
 	# Hitung vektor dan jarak menuju target
-	var to_target: Vector2 = current_target.global_position - global_position
+	var to_target: Vector2 = target_pos - global_position
 	var distance: float = to_target.length()
 	
 	# Hindari gaya berlebih jika sudah bertumpuk sangat dekat
@@ -112,6 +150,8 @@ func _physics_process(delta: float) -> void:
 
 ## Mencari target lawan yang masih aktif di arena
 func _acquire_target() -> RigidBody2D:
+	if not is_inside_tree() or get_tree() == null:
+		return null
 	var fighters: Array[Node] = get_tree().get_nodes_in_group("fighters")
 	var best_target: RigidBody2D = null
 	var closest_distance_sq: float = INF
@@ -224,6 +264,7 @@ func eliminate() -> void:
 func _eliminate() -> void:
 	is_eliminated = true
 	current_target = null
+	clear_nav_target_position()
 	linear_velocity = Vector2.ZERO
 	angular_velocity = 0.0
 	print(">>> [%s (ID: %d)] TERELIMINASI! <<<" % [fighter_name, fighter_id])

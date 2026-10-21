@@ -145,6 +145,7 @@ func test_match_hud_compatibility() -> bool:
 	assert(hud != null, "HUD node must exist")
 	assert(br_mgr != null, "BattleRoyaleManager node must exist")
 	assert(br_mgr is BaseMatchManager, "BattleRoyaleManager must be BaseMatchManager")
+	br_mgr.auto_spawn = false
 	
 	# Add to tree temporarily to test _ready binding
 	root.add_child(instance)
